@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: subscription-aggregator-postgres
+    environment:
+      POSTGRES_DB: subscription_aggregator
+      POSTGRES_USER: subscription_aggregator
+      POSTGRES_PASSWORD: subscription_aggregator_password
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - subscription_aggregator_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U subscription_aggregator -d subscription_aggregator"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  subscription_aggregator_postgres_data:

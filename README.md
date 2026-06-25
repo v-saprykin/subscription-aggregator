@@ -57,17 +57,19 @@ cp .env.example .env
 Required variables:
 - `APP_ENV`: application environment, for example `local`.
 - `HTTP_ADDR`: HTTP server address, for example `:8080`.
-- `DATABASE_URL`: PostgreSQL connection string.
+- `DATABASE_URL`: PostgreSQL connection string. For host tools, use the `localhost` URL from `.env.example`.
 - `LOG_LEVEL`: log level, for example `debug`, `info`, `warn`, or `error`.
 
-## Local startup
-Start all services:
+When the application later runs inside Docker Compose, the database hostname should be `postgres` instead of `localhost`.
+
+## Local PostgreSQL
+Start PostgreSQL:
 
 ```bash
-docker compose up --build
+docker compose up -d postgres
 ```
 
-Stop all services:
+Stop PostgreSQL and keep the database volume:
 
 ```bash
 docker compose down
@@ -77,6 +79,16 @@ Stop and remove database volume:
 
 ```bash
 docker compose down -v
+```
+
+The local PostgreSQL service uses:
+
+```text
+host: localhost
+port: 5433
+database: subscription_aggregator
+user: subscription_aggregator
+password: subscription_aggregator_password
 ```
 
 ## Migrations
@@ -89,13 +101,25 @@ migrate create -ext sql -dir db/migration -seq migration_name
 Apply migrations:
 
 ```bash
-migrate -path db/migration -database "$DATABASE_URL" up
+migrate -path db/migration -database "postgres://subscription_aggregator:subscription_aggregator_password@localhost:5433/subscription_aggregator?sslmode=disable" up
 ```
 
 Rollback last migration:
 
 ```bash
-migrate -path db/migration -database "$DATABASE_URL" down 1
+migrate -path db/migration -database "postgres://subscription_aggregator:subscription_aggregator_password@localhost:5433/subscription_aggregator?sslmode=disable" down 1
+```
+
+Inspect the `subscriptions` table schema:
+
+```bash
+docker compose exec postgres psql -U subscription_aggregator -d subscription_aggregator -c "\d subscriptions"
+```
+
+Inspect subscription rows:
+
+```bash
+docker compose exec postgres psql -U subscription_aggregator -d subscription_aggregator -c "SELECT id, service_name, price, user_id, start_date, end_date, created_at, updated_at FROM subscriptions LIMIT 20;"
 ```
 
 ## sqlc
@@ -151,7 +175,7 @@ go test ./...
 go vet ./...
 sqlc generate
 docker compose config
-docker compose up --build
+docker compose up -d postgres
 ```
 
 ## Submission checklist
