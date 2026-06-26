@@ -27,6 +27,7 @@ func (h *Handler) RegisterRoutes(api *gin.RouterGroup) {
 	routes := api.Group("/subscriptions")
 	routes.POST("", h.create)
 	routes.GET("", h.list)
+	routes.GET("/total", h.total)
 	routes.GET("/:id", h.get)
 	routes.PUT("/:id", h.update)
 	routes.DELETE("/:id", h.delete)
@@ -80,6 +81,22 @@ func (h *Handler) list(c *gin.Context) {
 		Limit:  filter.Limit,
 		Offset: filter.Offset,
 	})
+}
+
+func (h *Handler) total(c *gin.Context) {
+	filter, err := parseTotalPriceFilter(c.Request.URL.Query())
+	if err != nil {
+		writeError(c, http.StatusBadRequest, "validation_error", err.Error())
+		return
+	}
+
+	totalPrice, err := h.service.CalculateTotalPrice(c.Request.Context(), filter)
+	if err != nil {
+		h.writeServiceError(c, "calculate_total_price", err)
+		return
+	}
+
+	c.JSON(http.StatusOK, toTotalPriceResponse(totalPrice, filter))
 }
 
 func (h *Handler) update(c *gin.Context) {
@@ -175,6 +192,14 @@ type listSubscriptionsResponse struct {
 	Offset int32                  `json:"offset"`
 }
 
+type totalPriceResponse struct {
+	TotalPrice  int64   `json:"total_price"`
+	PeriodFrom  string  `json:"period_from"`
+	PeriodTo    string  `json:"period_to"`
+	UserID      *string `json:"user_id"`
+	ServiceName *string `json:"service_name"`
+}
+
 func writeError(c *gin.Context, status int, code string, message string) {
 	c.JSON(status, errorResponse{
 		Error:   code,
@@ -189,6 +214,28 @@ func toSubscriptionResponses(items []Subscription) []subscriptionResponse {
 	}
 
 	return responses
+}
+
+func toTotalPriceResponse(totalPrice int64, filter TotalPriceFilter) totalPriceResponse {
+	var userID *string
+	if filter.UserID != nil {
+		formatted := filter.UserID.String()
+		userID = &formatted
+	}
+
+	var serviceName *string
+	if filter.ServiceName != nil {
+		formatted := *filter.ServiceName
+		serviceName = &formatted
+	}
+
+	return totalPriceResponse{
+		TotalPrice:  totalPrice,
+		PeriodFrom:  formatAPIMonth(filter.PeriodFrom),
+		PeriodTo:    formatAPIMonth(filter.PeriodTo),
+		UserID:      userID,
+		ServiceName: serviceName,
+	}
 }
 
 func toSubscriptionResponse(item Subscription) subscriptionResponse {

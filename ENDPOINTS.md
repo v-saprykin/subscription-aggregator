@@ -175,6 +175,7 @@ Validation:
 - `from` and `to` must use `MM-YYYY` format.
 - `to` must not be earlier than `from`.
 - `user_id` must be UUID when provided.
+- `service_name` must not be blank when provided.
 
 Responses:
 - `200 OK`: calculated total.

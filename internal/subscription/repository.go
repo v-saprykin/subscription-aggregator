@@ -79,6 +79,20 @@ func (r *Repository) List(ctx context.Context, filter ListSubscriptionsFilter) (
 	return items, nil
 }
 
+func (r *Repository) CalculateTotalPrice(ctx context.Context, filter TotalPriceFilter) (int64, error) {
+	total, err := r.queries.CalculateTotalPrice(ctx, sqldb.CalculateTotalPriceParams{
+		PeriodTo:          pgDate(filter.PeriodTo),
+		PeriodFrom:        pgDate(filter.PeriodFrom),
+		UserIDFilter:      uuidFilter(filter.UserID),
+		ServiceNameFilter: textFilter(filter.ServiceName),
+	})
+	if err != nil {
+		return 0, fmt.Errorf("calculate total price: %w", err)
+	}
+
+	return total, nil
+}
+
 func (r *Repository) Update(ctx context.Context, id uuid.UUID, input UpsertSubscription) (Subscription, error) {
 	row, err := r.queries.UpdateSubscription(ctx, sqldb.UpdateSubscriptionParams{
 		ID:          id,
