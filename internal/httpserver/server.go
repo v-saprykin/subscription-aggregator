@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func New(addr string, logger *slog.Logger) *http.Server {
+func New(addr string, logger *slog.Logger, registerRoutes ...func(*gin.RouterGroup)) *http.Server {
 	gin.SetMode(gin.ReleaseMode)
 
 	router := gin.New()
@@ -18,6 +18,13 @@ func New(addr string, logger *slog.Logger) *http.Server {
 	router.GET("/healthz", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
+
+	api := router.Group("/api/v1")
+	for _, register := range registerRoutes {
+		if register != nil {
+			register(api)
+		}
+	}
 
 	return &http.Server{
 		Addr:              addr,
