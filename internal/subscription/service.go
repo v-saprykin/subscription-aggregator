@@ -26,6 +26,10 @@ func (s *Service) List(ctx context.Context, filter ListSubscriptionsFilter) ([]S
 	return s.repository.List(ctx, filter)
 }
 
+func (s *Service) CalculateTotalPrice(ctx context.Context, filter TotalPriceFilter) (int64, error) {
+	return s.repository.CalculateTotalPrice(ctx, filter)
+}
+
 func (s *Service) Update(ctx context.Context, id uuid.UUID, input UpsertSubscription) (Subscription, error) {
 	return s.repository.Update(ctx, id, input)
 }

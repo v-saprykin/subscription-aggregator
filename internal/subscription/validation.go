@@ -125,6 +125,56 @@ func parseListSubscriptionsFilter(values url.Values) (ListSubscriptionsFilter, e
 	return filter, nil
 }
 
+func parseTotalPriceFilter(values url.Values) (TotalPriceFilter, error) {
+	rawFrom, ok := firstQueryValue(values, "from")
+	if !ok || strings.TrimSpace(rawFrom) == "" {
+		return TotalPriceFilter{}, fmt.Errorf("from is required")
+	}
+	periodFrom, err := parseAPIMonth(rawFrom)
+	if err != nil {
+		return TotalPriceFilter{}, fmt.Errorf("from must use MM-YYYY format")
+	}
+
+	rawTo, ok := firstQueryValue(values, "to")
+	if !ok || strings.TrimSpace(rawTo) == "" {
+		return TotalPriceFilter{}, fmt.Errorf("to is required")
+	}
+	periodTo, err := parseAPIMonth(rawTo)
+	if err != nil {
+		return TotalPriceFilter{}, fmt.Errorf("to must use MM-YYYY format")
+	}
+	if periodTo.Before(periodFrom) {
+		return TotalPriceFilter{}, fmt.Errorf("to must not be earlier than from")
+	}
+
+	filter := TotalPriceFilter{
+		PeriodFrom: periodFrom,
+		PeriodTo:   periodTo,
+	}
+
+	if rawUserID, ok := firstQueryValue(values, "user_id"); ok {
+		rawUserID = strings.TrimSpace(rawUserID)
+		if rawUserID == "" {
+			return TotalPriceFilter{}, fmt.Errorf("user_id must be UUID")
+		}
+		userID, err := uuid.Parse(rawUserID)
+		if err != nil {
+			return TotalPriceFilter{}, fmt.Errorf("user_id must be UUID")
+		}
+		filter.UserID = &userID
+	}
+
+	if rawServiceName, ok := firstQueryValue(values, "service_name"); ok {
+		serviceName := strings.TrimSpace(rawServiceName)
+		if serviceName == "" {
+			return TotalPriceFilter{}, fmt.Errorf("service_name must not be blank")
+		}
+		filter.ServiceName = &serviceName
+	}
+
+	return filter, nil
+}
+
 func firstQueryValue(values url.Values, name string) (string, bool) {
 	rawValues, ok := values[name]
 	if !ok {

@@ -190,3 +190,112 @@ func TestParseListSubscriptionsFilterErrors(t *testing.T) {
 		})
 	}
 }
+
+func TestParseTotalPriceFilter(t *testing.T) {
+	t.Parallel()
+
+	values := url.Values{
+		"from":         {"07-2025"},
+		"to":           {"12-2025"},
+		"user_id":      {"60601fee-2bf1-4721-ae6f-7636e79a0cba"},
+		"service_name": {" Yandex Plus "},
+	}
+
+	filter, err := parseTotalPriceFilter(values)
+	if err != nil {
+		t.Fatalf("parseTotalPriceFilter() error = %v", err)
+	}
+
+	if got := filter.PeriodFrom.Format("2006-01-02"); got != "2025-07-01" {
+		t.Fatalf("PeriodFrom = %s, want 2025-07-01", got)
+	}
+	if got := filter.PeriodTo.Format("2006-01-02"); got != "2025-12-01" {
+		t.Fatalf("PeriodTo = %s, want 2025-12-01", got)
+	}
+	if filter.UserID == nil {
+		t.Fatal("UserID = nil, want value")
+	}
+	if filter.ServiceName == nil || *filter.ServiceName != "Yandex Plus" {
+		t.Fatalf("ServiceName = %v, want Yandex Plus", filter.ServiceName)
+	}
+}
+
+func TestParseTotalPriceFilterOptionalFilters(t *testing.T) {
+	t.Parallel()
+
+	filter, err := parseTotalPriceFilter(url.Values{
+		"from": {"07-2025"},
+		"to":   {"12-2025"},
+	})
+	if err != nil {
+		t.Fatalf("parseTotalPriceFilter() error = %v", err)
+	}
+
+	if filter.UserID != nil {
+		t.Fatalf("UserID = %v, want nil", filter.UserID)
+	}
+	if filter.ServiceName != nil {
+		t.Fatalf("ServiceName = %v, want nil", filter.ServiceName)
+	}
+}
+
+func TestParseTotalPriceFilterErrors(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		values  url.Values
+		wantErr string
+	}{
+		{
+			name:    "missing from",
+			values:  url.Values{"to": {"12-2025"}},
+			wantErr: "from is required",
+		},
+		{
+			name:    "missing to",
+			values:  url.Values{"from": {"07-2025"}},
+			wantErr: "to is required",
+		},
+		{
+			name:    "invalid from",
+			values:  url.Values{"from": {"2025-07"}, "to": {"12-2025"}},
+			wantErr: "from must use MM-YYYY format",
+		},
+		{
+			name:    "invalid to",
+			values:  url.Values{"from": {"07-2025"}, "to": {"2025-12"}},
+			wantErr: "to must use MM-YYYY format",
+		},
+		{
+			name:    "to before from",
+			values:  url.Values{"from": {"12-2025"}, "to": {"07-2025"}},
+			wantErr: "to must not be earlier than from",
+		},
+		{
+			name:    "invalid user id",
+			values:  url.Values{"from": {"07-2025"}, "to": {"12-2025"}, "user_id": {"not-a-uuid"}},
+			wantErr: "user_id must be UUID",
+		},
+		{
+			name:    "blank service name",
+			values:  url.Values{"from": {"07-2025"}, "to": {"12-2025"}, "service_name": {" "}},
+			wantErr: "service_name must not be blank",
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			_, err := parseTotalPriceFilter(tt.values)
+			if err == nil {
+				t.Fatal("parseTotalPriceFilter() error = nil, want error")
+			}
+			if err.Error() != tt.wantErr {
+				t.Fatalf("error = %q, want %q", err.Error(), tt.wantErr)
+			}
+		})
+	}
+}

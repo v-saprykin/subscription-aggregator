@@ -34,3 +34,10 @@ type ListSubscriptionsFilter struct {
 	UserID      *uuid.UUID
 	ServiceName *string
 }
+
+type TotalPriceFilter struct {
+	PeriodFrom  time.Time
+	PeriodTo    time.Time
+	UserID      *uuid.UUID
+	ServiceName *string
+}
