@@ -1,0 +1,374 @@
+basePath: /
+definitions:
+  httpserver.healthResponse:
+    properties:
+      status:
+        description: Status is "ok" while the HTTP service is running.
+        example: ok
+        type: string
+    type: object
+  subscription.errorResponse:
+    properties:
+      error:
+        description: Error is a stable machine-readable error code.
+        example: validation_error
+        type: string
+      message:
+        description: Message describes the error for API clients.
+        example: start_date must use MM-YYYY format
+        type: string
+    type: object
+  subscription.listSubscriptionsResponse:
+    properties:
+      items:
+        description: Items contains the subscriptions in the current result page.
+        items:
+          $ref: '#/definitions/subscription.subscriptionResponse'
+        type: array
+      limit:
+        description: Limit is the requested maximum number of returned subscriptions.
+        type: integer
+      offset:
+        description: Offset is the requested number of skipped subscriptions.
+        type: integer
+    type: object
+  subscription.subscriptionResponse:
+    properties:
+      created_at:
+        description: CreatedAt is the record creation time in RFC 3339 format.
+        example: "2026-06-23T10:00:00Z"
+        format: date-time
+        type: string
+      end_date:
+        description: EndDate is the optional last active month in MM-YYYY format.
+        example: 12-2025
+        type: string
+        x-nullable: true
+      id:
+        description: ID is the subscription UUID.
+        example: 2f8d9b27-5b9e-4d6f-83ef-cf4fef0c9fc2
+        format: uuid
+        type: string
+      price:
+        description: Price is the monthly price in integer rubles.
+        example: 400
+        type: integer
+      service_name:
+        description: ServiceName is the subscription service name.
+        example: Yandex Plus
+        type: string
+      start_date:
+        description: StartDate is the first active month in MM-YYYY format.
+        example: 07-2025
+        type: string
+      updated_at:
+        description: UpdatedAt is the record update time in RFC 3339 format.
+        example: "2026-06-23T10:00:00Z"
+        format: date-time
+        type: string
+      user_id:
+        description: UserID is the UUID of the user who owns the subscription.
+        example: 60601fee-2bf1-4721-ae6f-7636e79a0cba
+        format: uuid
+        type: string
+    type: object
+  subscription.totalPriceResponse:
+    properties:
+      period_from:
+        description: PeriodFrom is the inclusive period start in MM-YYYY format.
+        example: 07-2025
+        type: string
+      period_to:
+        description: PeriodTo is the inclusive period end in MM-YYYY format.
+        example: 12-2025
+        type: string
+      service_name:
+        description: ServiceName is the applied exact service filter, or null when
+          omitted.
+        example: Yandex Plus
+        type: string
+        x-nullable: true
+      total_price:
+        description: TotalPrice is the aggregate cost in integer rubles.
+        example: 2400
+        type: integer
+      user_id:
+        description: UserID is the applied user UUID filter, or null when omitted.
+        example: 60601fee-2bf1-4721-ae6f-7636e79a0cba
+        format: uuid
+        type: string
+        x-nullable: true
+    type: object
+  subscription.upsertSubscriptionRequest:
+    properties:
+      end_date:
+        description: EndDate is the optional last active month in MM-YYYY format and
+          cannot be earlier than start_date.
+        example: 12-2025
+        type: string
+        x-nullable: true
+      price:
+        description: Price is the monthly price in integer rubles and must be greater
+          than zero.
+        example: 400
+        minimum: 1
+        type: integer
+      service_name:
+        description: ServiceName is the non-blank subscription service name.
+        example: Yandex Plus
+        type: string
+      start_date:
+        description: StartDate is the first active month in MM-YYYY format.
+        example: 07-2025
+        type: string
+      user_id:
+        description: UserID is the UUID of the user who owns the subscription.
+        example: 60601fee-2bf1-4721-ae6f-7636e79a0cba
+        format: uuid
+        type: string
+    required:
+    - price
+    - service_name
+    - start_date
+    - user_id
+    type: object
+info:
+  contact: {}
+  description: REST API for storing online subscriptions and calculating their total
+    cost over an inclusive monthly period.
+  title: Subscription Aggregator API
+  version: "1.0"
+paths:
+  /api/v1/subscriptions:
+    get:
+      description: Returns subscriptions using the current offset-based list behavior
+        and optional exact-match filters.
+      parameters:
+      - default: 20
+        description: Maximum number of subscriptions to return
+        in: query
+        maximum: 100
+        minimum: 1
+        name: limit
+        type: integer
+      - default: 0
+        description: Number of subscriptions to skip
+        in: query
+        minimum: 0
+        name: offset
+        type: integer
+      - description: User UUID filter
+        format: uuid
+        in: query
+        name: user_id
+        type: string
+      - description: Exact service name filter
+        in: query
+        name: service_name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/subscription.listSubscriptionsResponse'
+        "400":
+          description: Invalid query parameter
+          schema:
+            $ref: '#/definitions/subscription.errorResponse'
+        "500":
+          description: Unexpected server error
+          schema:
+            $ref: '#/definitions/subscription.errorResponse'
+      summary: List subscriptions
+      tags:
+      - subscriptions
+    post:
+      consumes:
+      - application/json
+      description: Creates a subscription with a monthly price in integer rubles.
+        Dates use MM-YYYY.
+      parameters:
+      - description: Subscription data
+        in: body
+        name: subscription
+        required: true
+        schema:
+          $ref: '#/definitions/subscription.upsertSubscriptionRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/subscription.subscriptionResponse'
+        "400":
+          description: Invalid request body or field value
+          schema:
+            $ref: '#/definitions/subscription.errorResponse'
+        "500":
+          description: Unexpected server error
+          schema:
+            $ref: '#/definitions/subscription.errorResponse'
+      summary: Create a subscription
+      tags:
+      - subscriptions
+  /api/v1/subscriptions/{id}:
+    delete:
+      description: Deletes one subscription by its UUID.
+      parameters:
+      - description: Subscription UUID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Invalid subscription UUID
+          schema:
+            $ref: '#/definitions/subscription.errorResponse'
+        "404":
+          description: Subscription not found
+          schema:
+            $ref: '#/definitions/subscription.errorResponse'
+        "500":
+          description: Unexpected server error
+          schema:
+            $ref: '#/definitions/subscription.errorResponse'
+      summary: Delete a subscription
+      tags:
+      - subscriptions
+    get:
+      description: Returns one subscription by its UUID.
+      parameters:
+      - description: Subscription UUID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/subscription.subscriptionResponse'
+        "400":
+          description: Invalid subscription UUID
+          schema:
+            $ref: '#/definitions/subscription.errorResponse'
+        "404":
+          description: Subscription not found
+          schema:
+            $ref: '#/definitions/subscription.errorResponse'
+        "500":
+          description: Unexpected server error
+          schema:
+            $ref: '#/definitions/subscription.errorResponse'
+      summary: Get a subscription
+      tags:
+      - subscriptions
+    put:
+      consumes:
+      - application/json
+      description: Replaces all mutable subscription fields. Dates use MM-YYYY.
+      parameters:
+      - description: Subscription UUID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Replacement subscription data
+        in: body
+        name: subscription
+        required: true
+        schema:
+          $ref: '#/definitions/subscription.upsertSubscriptionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/subscription.subscriptionResponse'
+        "400":
+          description: Invalid subscription UUID, request body, or field value
+          schema:
+            $ref: '#/definitions/subscription.errorResponse'
+        "404":
+          description: Subscription not found
+          schema:
+            $ref: '#/definitions/subscription.errorResponse'
+        "500":
+          description: Unexpected server error
+          schema:
+            $ref: '#/definitions/subscription.errorResponse'
+      summary: Update a subscription
+      tags:
+      - subscriptions
+  /api/v1/subscriptions/total:
+    get:
+      description: Calculates the total cost in integer rubles for all overlapping
+        months in the inclusive requested period.
+      parameters:
+      - description: Inclusive period start in MM-YYYY format
+        example: 07-2025
+        in: query
+        name: from
+        required: true
+        type: string
+      - description: Inclusive period end in MM-YYYY format
+        example: 12-2025
+        in: query
+        name: to
+        required: true
+        type: string
+      - description: User UUID filter
+        format: uuid
+        in: query
+        name: user_id
+        type: string
+      - description: Exact service name filter
+        in: query
+        name: service_name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/subscription.totalPriceResponse'
+        "400":
+          description: Invalid or missing query parameter
+          schema:
+            $ref: '#/definitions/subscription.errorResponse'
+        "500":
+          description: Unexpected server error
+          schema:
+            $ref: '#/definitions/subscription.errorResponse'
+      summary: Calculate total subscription cost
+      tags:
+      - subscriptions
+  /healthz:
+    get:
+      description: Reports whether the HTTP service is running.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpserver.healthResponse'
+      summary: Check service health
+      tags:
+      - health
+schemes:
+- http
+swagger: "2.0"

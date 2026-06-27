@@ -1,0 +1,521 @@
+{
+    "schemes": [
+        "http"
+    ],
+    "swagger": "2.0",
+    "info": {
+        "description": "REST API for storing online subscriptions and calculating their total cost over an inclusive monthly period.",
+        "title": "Subscription Aggregator API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "basePath": "/",
+    "paths": {
+        "/api/v1/subscriptions": {
+            "get": {
+                "description": "Returns subscriptions using the current offset-based list behavior and optional exact-match filters.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "subscriptions"
+                ],
+                "summary": "List subscriptions",
+                "parameters": [
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Maximum number of subscriptions to return",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 0,
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Number of subscriptions to skip",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "User UUID filter",
+                        "name": "user_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Exact service name filter",
+                        "name": "service_name",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/subscription.listSubscriptionsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid query parameter",
+                        "schema": {
+                            "$ref": "#/definitions/subscription.errorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Unexpected server error",
+                        "schema": {
+                            "$ref": "#/definitions/subscription.errorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Creates a subscription with a monthly price in integer rubles. Dates use MM-YYYY.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "subscriptions"
+                ],
+                "summary": "Create a subscription",
+                "parameters": [
+                    {
+                        "description": "Subscription data",
+                        "name": "subscription",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/subscription.upsertSubscriptionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/subscription.subscriptionResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body or field value",
+                        "schema": {
+                            "$ref": "#/definitions/subscription.errorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Unexpected server error",
+                        "schema": {
+                            "$ref": "#/definitions/subscription.errorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/subscriptions/total": {
+            "get": {
+                "description": "Calculates the total cost in integer rubles for all overlapping months in the inclusive requested period.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "subscriptions"
+                ],
+                "summary": "Calculate total subscription cost",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "07-2025",
+                        "description": "Inclusive period start in MM-YYYY format",
+                        "name": "from",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "12-2025",
+                        "description": "Inclusive period end in MM-YYYY format",
+                        "name": "to",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "User UUID filter",
+                        "name": "user_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Exact service name filter",
+                        "name": "service_name",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/subscription.totalPriceResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid or missing query parameter",
+                        "schema": {
+                            "$ref": "#/definitions/subscription.errorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Unexpected server error",
+                        "schema": {
+                            "$ref": "#/definitions/subscription.errorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/subscriptions/{id}": {
+            "get": {
+                "description": "Returns one subscription by its UUID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "subscriptions"
+                ],
+                "summary": "Get a subscription",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Subscription UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/subscription.subscriptionResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid subscription UUID",
+                        "schema": {
+                            "$ref": "#/definitions/subscription.errorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Subscription not found",
+                        "schema": {
+                            "$ref": "#/definitions/subscription.errorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Unexpected server error",
+                        "schema": {
+                            "$ref": "#/definitions/subscription.errorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Replaces all mutable subscription fields. Dates use MM-YYYY.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "subscriptions"
+                ],
+                "summary": "Update a subscription",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Subscription UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Replacement subscription data",
+                        "name": "subscription",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/subscription.upsertSubscriptionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/subscription.subscriptionResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid subscription UUID, request body, or field value",
+                        "schema": {
+                            "$ref": "#/definitions/subscription.errorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Subscription not found",
+                        "schema": {
+                            "$ref": "#/definitions/subscription.errorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Unexpected server error",
+                        "schema": {
+                            "$ref": "#/definitions/subscription.errorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Deletes one subscription by its UUID.",
+                "tags": [
+                    "subscriptions"
+                ],
+                "summary": "Delete a subscription",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Subscription UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Invalid subscription UUID",
+                        "schema": {
+                            "$ref": "#/definitions/subscription.errorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Subscription not found",
+                        "schema": {
+                            "$ref": "#/definitions/subscription.errorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Unexpected server error",
+                        "schema": {
+                            "$ref": "#/definitions/subscription.errorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/healthz": {
+            "get": {
+                "description": "Reports whether the HTTP service is running.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "health"
+                ],
+                "summary": "Check service health",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/httpserver.healthResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "httpserver.healthResponse": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "description": "Status is \"ok\" while the HTTP service is running.",
+                    "type": "string",
+                    "example": "ok"
+                }
+            }
+        },
+        "subscription.errorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "description": "Error is a stable machine-readable error code.",
+                    "type": "string",
+                    "example": "validation_error"
+                },
+                "message": {
+                    "description": "Message describes the error for API clients.",
+                    "type": "string",
+                    "example": "start_date must use MM-YYYY format"
+                }
+            }
+        },
+        "subscription.listSubscriptionsResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "description": "Items contains the subscriptions in the current result page.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/subscription.subscriptionResponse"
+                    }
+                },
+                "limit": {
+                    "description": "Limit is the requested maximum number of returned subscriptions.",
+                    "type": "integer"
+                },
+                "offset": {
+                    "description": "Offset is the requested number of skipped subscriptions.",
+                    "type": "integer"
+                }
+            }
+        },
+        "subscription.subscriptionResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "description": "CreatedAt is the record creation time in RFC 3339 format.",
+                    "type": "string",
+                    "format": "date-time",
+                    "example": "2026-06-23T10:00:00Z"
+                },
+                "end_date": {
+                    "description": "EndDate is the optional last active month in MM-YYYY format.",
+                    "type": "string",
+                    "x-nullable": true,
+                    "example": "12-2025"
+                },
+                "id": {
+                    "description": "ID is the subscription UUID.",
+                    "type": "string",
+                    "format": "uuid",
+                    "example": "2f8d9b27-5b9e-4d6f-83ef-cf4fef0c9fc2"
+                },
+                "price": {
+                    "description": "Price is the monthly price in integer rubles.",
+                    "type": "integer",
+                    "example": 400
+                },
+                "service_name": {
+                    "description": "ServiceName is the subscription service name.",
+                    "type": "string",
+                    "example": "Yandex Plus"
+                },
+                "start_date": {
+                    "description": "StartDate is the first active month in MM-YYYY format.",
+                    "type": "string",
+                    "example": "07-2025"
+                },
+                "updated_at": {
+                    "description": "UpdatedAt is the record update time in RFC 3339 format.",
+                    "type": "string",
+                    "format": "date-time",
+                    "example": "2026-06-23T10:00:00Z"
+                },
+                "user_id": {
+                    "description": "UserID is the UUID of the user who owns the subscription.",
+                    "type": "string",
+                    "format": "uuid",
+                    "example": "60601fee-2bf1-4721-ae6f-7636e79a0cba"
+                }
+            }
+        },
+        "subscription.totalPriceResponse": {
+            "type": "object",
+            "properties": {
+                "period_from": {
+                    "description": "PeriodFrom is the inclusive period start in MM-YYYY format.",
+                    "type": "string",
+                    "example": "07-2025"
+                },
+                "period_to": {
+                    "description": "PeriodTo is the inclusive period end in MM-YYYY format.",
+                    "type": "string",
+                    "example": "12-2025"
+                },
+                "service_name": {
+                    "description": "ServiceName is the applied exact service filter, or null when omitted.",
+                    "type": "string",
+                    "x-nullable": true,
+                    "example": "Yandex Plus"
+                },
+                "total_price": {
+                    "description": "TotalPrice is the aggregate cost in integer rubles.",
+                    "type": "integer",
+                    "example": 2400
+                },
+                "user_id": {
+                    "description": "UserID is the applied user UUID filter, or null when omitted.",
+                    "type": "string",
+                    "format": "uuid",
+                    "x-nullable": true,
+                    "example": "60601fee-2bf1-4721-ae6f-7636e79a0cba"
+                }
+            }
+        },
+        "subscription.upsertSubscriptionRequest": {
+            "type": "object",
+            "required": [
+                "price",
+                "service_name",
+                "start_date",
+                "user_id"
+            ],
+            "properties": {
+                "end_date": {
+                    "description": "EndDate is the optional last active month in MM-YYYY format and cannot be earlier than start_date.",
+                    "type": "string",
+                    "x-nullable": true,
+                    "example": "12-2025"
+                },
+                "price": {
+                    "description": "Price is the monthly price in integer rubles and must be greater than zero.",
+                    "type": "integer",
+                    "minimum": 1,
+                    "example": 400
+                },
+                "service_name": {
+                    "description": "ServiceName is the non-blank subscription service name.",
+                    "type": "string",
+                    "example": "Yandex Plus"
+                },
+                "start_date": {
+                    "description": "StartDate is the first active month in MM-YYYY format.",
+                    "type": "string",
+                    "example": "07-2025"
+                },
+                "user_id": {
+                    "description": "UserID is the UUID of the user who owns the subscription.",
+                    "type": "string",
+                    "format": "uuid",
+                    "example": "60601fee-2bf1-4721-ae6f-7636e79a0cba"
+                }
+            }
+        }
+    }
+}

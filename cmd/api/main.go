@@ -12,12 +12,18 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	_ "github.com/v-saprykin/subscription-aggregator/docs"
 	"github.com/v-saprykin/subscription-aggregator/internal/config"
 	sqldb "github.com/v-saprykin/subscription-aggregator/internal/db/sqlc"
 	"github.com/v-saprykin/subscription-aggregator/internal/httpserver"
 	"github.com/v-saprykin/subscription-aggregator/internal/subscription"
 )
 
+// @title Subscription Aggregator API
+// @version 1.0
+// @description REST API for storing online subscriptions and calculating their total cost over an inclusive monthly period.
+// @schemes http
+// @BasePath /
 func main() {
 	cfg, err := config.Load()
 	if err != nil {
