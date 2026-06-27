@@ -60,10 +60,64 @@ Required variables:
 - `DATABASE_URL`: PostgreSQL connection string. For host tools, use the `localhost` URL from `.env.example`.
 - `LOG_LEVEL`: log level, for example `debug`, `info`, `warn`, or `error`.
 
-When the application later runs inside Docker Compose, the database hostname should be `postgres` instead of `localhost`.
+Docker Compose supplies these variables to the API automatically and uses `postgres` as the database hostname.
+
+## Docker Compose
+
+The normal local workflow starts PostgreSQL, applies all migrations, and then starts the API:
+
+```bash
+docker compose up --build
+```
+
+The API is available at `http://localhost:8080` after PostgreSQL becomes healthy and the `migrate` service completes successfully. A manual host-side migration command is not required for this workflow.
+
+Start the full environment in detached mode:
+
+```bash
+docker compose up -d --build
+```
+
+Check the running services and the completed one-shot migration service:
+
+```bash
+docker compose ps --all
+```
+
+Check API health:
+
+```bash
+curl http://localhost:8080/healthz
+```
+
+Check the subscriptions endpoint:
+
+```bash
+curl http://localhost:8080/api/v1/subscriptions
+```
+
+View service logs:
+
+```bash
+docker compose logs -f api
+docker compose logs -f postgres
+docker compose logs migrate
+```
+
+Stop the services while keeping the PostgreSQL volume:
+
+```bash
+docker compose down
+```
+
+Stop the services and remove the PostgreSQL volume:
+
+```bash
+docker compose down -v
+```
 
 ## Local PostgreSQL
-Start PostgreSQL:
+For non-Compose API development, start only PostgreSQL:
 
 ```bash
 docker compose up -d postgres
@@ -111,6 +165,8 @@ docker run --rm --name subscription-aggregator-api \
 ```
 
 ## Migrations
+Docker Compose runs migrations automatically during full-environment startup. The manual commands below remain useful when running PostgreSQL and the API separately for host-side development.
+
 Create a new migration:
 
 ```bash
@@ -194,7 +250,7 @@ go test ./...
 go vet ./...
 sqlc generate
 docker compose config
-docker compose up -d postgres
+docker compose up --build
 ```
 
 ## Submission checklist
