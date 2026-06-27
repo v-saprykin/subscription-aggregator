@@ -91,6 +91,25 @@ user: subscription_aggregator
 password: subscription_aggregator_password
 ```
 
+## Docker image
+Build the API image:
+
+```bash
+docker build -t subscription-aggregator-api .
+```
+
+Run the API container against the local PostgreSQL exposed by Docker Compose:
+
+```bash
+docker run --rm --name subscription-aggregator-api \
+  -p 8080:8080 \
+  -e APP_ENV=local \
+  -e HTTP_ADDR=:8080 \
+  -e LOG_LEVEL=debug \
+  -e DATABASE_URL='postgres://subscription_aggregator:subscription_aggregator_password@host.docker.internal:5433/subscription_aggregator?sslmode=disable' \
+  subscription-aggregator-api
+```
+
 ## Migrations
 Create a new migration:
 
