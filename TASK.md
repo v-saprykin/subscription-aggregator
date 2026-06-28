@@ -70,7 +70,7 @@ See `ENDPOINTS.md`.
 See `DB_SCHEMA.md` and `db/migration/000001_create_subscriptions.up.sql`.
 
 ## Verification checklist
-- `gofmt ./...`
+- `gofmt -w .`
 - `go test ./...`
 - `go vet ./...`
 - `sqlc generate`
