@@ -17,11 +17,16 @@ const (
 )
 
 type upsertSubscriptionRequest struct {
-	ServiceName string  `json:"service_name"`
-	Price       int     `json:"price"`
-	UserID      string  `json:"user_id"`
-	StartDate   string  `json:"start_date"`
-	EndDate     *string `json:"end_date"`
+	// ServiceName is the non-blank subscription service name.
+	ServiceName string `json:"service_name" validate:"required" example:"Yandex Plus"`
+	// Price is the monthly price in integer rubles and must be greater than zero.
+	Price int `json:"price" validate:"required" minimum:"1" example:"400"`
+	// UserID is the UUID of the user who owns the subscription.
+	UserID string `json:"user_id" validate:"required" format:"uuid" example:"60601fee-2bf1-4721-ae6f-7636e79a0cba"`
+	// StartDate is the first active month in MM-YYYY format.
+	StartDate string `json:"start_date" validate:"required" example:"07-2025"`
+	// EndDate is the optional last active month in MM-YYYY format and cannot be earlier than start_date.
+	EndDate *string `json:"end_date" extensions:"x-nullable" example:"12-2025"`
 }
 
 func validateUpsertSubscriptionRequest(req upsertSubscriptionRequest) (UpsertSubscription, error) {

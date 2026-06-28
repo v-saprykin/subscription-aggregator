@@ -237,9 +237,26 @@ curl 'http://localhost:8080/api/v1/subscriptions/total?from=07-2025&to=12-2025&u
 ```
 
 ## Swagger
-Swagger documentation should be available at one of these locations after implementation:
-- `docs/swagger.yaml`
-- `http://localhost:8080/swagger/index.html`
+
+Swagger documents the existing API contract and is served by the API during normal local and Docker Compose startup.
+
+Install the Swagger generator:
+
+```bash
+go install github.com/swaggo/swag/cmd/swag@latest
+```
+
+Regenerate the committed files under `docs/` after changing API routes, request or response models, or Swagger annotations:
+
+```bash
+swag init -g cmd/api/main.go
+```
+
+Open Swagger UI while the API is running:
+
+```text
+http://localhost:8080/swagger/index.html
+```
 
 ## Verification
 Run before submitting:
