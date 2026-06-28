@@ -1,6 +1,7 @@
 package subscription
 
 import (
+	"context"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -11,12 +12,21 @@ import (
 	"github.com/google/uuid"
 )
 
+type subscriptionService interface {
+	Create(context.Context, UpsertSubscription) (Subscription, error)
+	Get(context.Context, uuid.UUID) (Subscription, error)
+	List(context.Context, ListSubscriptionsFilter) ([]Subscription, error)
+	CalculateTotalPrice(context.Context, TotalPriceFilter) (int64, error)
+	Update(context.Context, uuid.UUID, UpsertSubscription) (Subscription, error)
+	Delete(context.Context, uuid.UUID) error
+}
+
 type Handler struct {
-	service *Service
+	service subscriptionService
 	logger  *slog.Logger
 }
 
-func NewHandler(service *Service, logger *slog.Logger) *Handler {
+func NewHandler(service subscriptionService, logger *slog.Logger) *Handler {
 	return &Handler{
 		service: service,
 		logger:  logger,
