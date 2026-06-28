@@ -3,7 +3,7 @@
 REST service for storing user online subscriptions and calculating total subscription cost for a selected period.
 
 ## Status
-Project skeleton for the Effective Mobile Junior Golang Developer test assignment.
+Implementation for the Effective Mobile Junior Golang Developer test assignment.
 
 ## Stack
 - Go.
@@ -21,6 +21,7 @@ Project skeleton for the Effective Mobile Junior Golang Developer test assignmen
 - Create subscription.
 - Read subscription by id.
 - List subscriptions.
+- Filter the subscription list by `user_id` and `service_name`.
 - Update subscription.
 - Delete subscription.
 - Calculate total subscription cost for a selected period.
@@ -39,7 +40,6 @@ Project skeleton for the Effective Mobile Junior Golang Developer test assignmen
 ├── docs
 ├── docker-compose.yml
 ├── Dockerfile
-├── Makefile
 ├── sqlc.yaml
 ├── TASK.md
 ├── ENDPOINTS.md
@@ -262,7 +262,7 @@ http://localhost:8080/swagger/index.html
 Run before submitting:
 
 ```bash
-gofmt ./...
+gofmt -w .
 go test ./...
 go vet ./...
 sqlc generate
